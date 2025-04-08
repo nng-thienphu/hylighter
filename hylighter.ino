@@ -14,7 +14,6 @@
 // Import library
 #include <LXESP32DMX.h>         
 #include "src/dmx_app/artnet.h"
-#include "src/dmx_app/dmx_callbacks.h"
 #include "src/config/config.h"
 #include "src/wifi_service/wifi_service.h"
 #include "test/tester.h"
@@ -85,6 +84,31 @@ static void receiveCallback(int slots) {
   }
 }
 
+int test_ch = 0; 
+int test_pin = 11; 
+
+void channel6Setup() {
+  Serial.println("Testing setup code...");
+  display.init();
+  display.setContrast(255);
+  display.setLogBuffer(5, 30);
+  display.clear();
+  display.println("HyLighter V3 " + 
+        String(Version/100) + "." +
+        String((Version%100)/10) + "." +
+        String(Version%10));
+    display.drawLogBuffer(0,0);
+    display.display();
+    delay(1000);
+
+    setupPWMChannel(test_pin, test_ch); 
+}
+
+void channel6Loop() {
+  ledcWrite(test_ch, 1000);
+  // ledcWrite(3, led_ch3_duty);
+}
+
 
 /************************************************************************
  * Arduino Setup
@@ -95,72 +119,74 @@ void setup() {
   Serial.println("ESP32 IS RUNNING !");
 
   #ifdef RUN_TESTS
-    // If defined, we'll run our test class
-    Serial.println("Testing setup code...");
-    tester.runAllTests();
+    channel6Setup();
+    
   #else
-  Serial.begin(115200);
-  delay(2000);
+    Serial.println("=== Starting HyLighter ===");
 
-  Serial.println("=== Starting HyLighter ===");
+    /***********************************************************************
+     * Initialization of the OLED display
+     **********************************************************************/
+    display.init();
+    display.setContrast(255);
+    display.setLogBuffer(5, 30);
 
-  /***********************************************************************
-   * Initialization of the OLED display
-   **********************************************************************/
-  display.init();
-  display.setContrast(255);
-  display.setLogBuffer(5, 30);
+    display.clear();
+    display.println("HyLighter V3 " + 
+        String(Version/100) + "." +
+        String((Version%100)/10) + "." +
+        String(Version%10));
+    display.drawLogBuffer(0,0);
+    display.display();
+    delay(1000);
 
-  display.clear();
-  display.println("HyLighter V3 " + 
-      String(Version/100) + "." +
-      String((Version%100)/10) + "." +
-      String(Version%10));
-  display.drawLogBuffer(0,0);
-  display.display();
-  delay(1000);
+    // ESP32DMX.setDirectionPin(DMX_DIRECTION_PIN);
 
-  /***********************************************************************
-   * DMX Setup
-   **********************************************************************/
-  if (!slotZero) {
-    // If slotZero is false, compute a "startSlot" from hylighterNum
-    startSlot = (hylighterNum - 1) * 16;
-  }
-  Serial.print("DMX Start Slot: ");
-  Serial.println(startSlot);
+    // const uint8_t ledPins[NUM_LEDS] = {32, 22, 33, 21, 25, 19, 26, 17, 27, 16};
+    // for (int i = 0; i < NUM_LEDS; i++) {
+    //   setupPWMChannel(ledPins[i], i + 1);
+    // }
 
-  ESP32DMX.setDirectionPin(DMX_DIRECTION_PIN);
+    /***********************************************************************
+     * DMX Setup
+     **********************************************************************/
+    if (!slotZero) {
+      // If slotZero is false, compute a "startSlot" from hylighterNum
+      startSlot = (hylighterNum - 1) * 16;
+    }
+    Serial.print("DMX Start Slot: ");
+    Serial.println(startSlot);
 
-  // Assign a PWM channel to each LED pin
-  // (If your actual LED pins differ, change them below.)
-  const uint8_t ledPins[NUM_LEDS] = {32, 22, 33, 21, 25, 19, 26, 17, 27, 16};
-  for (int i = 0; i < NUM_LEDS; i++) {
-    setupPWMChannel(ledPins[i], i + 1);
-  }
+    ESP32DMX.setDirectionPin(DMX_DIRECTION_PIN);
 
-  // Start DMX input and register callback
-  ESP32DMX.setDataReceivedCallback(&receiveCallback);
-  ESP32DMX.startInput(DMX_SERIAL_INPUT_PIN);
+    // Assign a PWM channel to each LED pin
+    const uint8_t ledPins[NUM_LEDS] = {32, 22, 33, 21, 25, 19, 26, 17, 27, 16};
+    for (int i = 0; i < NUM_LEDS; i++) {
+      setupPWMChannel(ledPins[i], i + 1);
+    }
 
-  /***********************************************************************
-   * Wi-Fi + AutoConnect Setup
-   **********************************************************************/
-  wifiConnected = WifiServiceSetup();
-  
-  /***********************************************************************
-   * Art-Net Setup (only if Wi-Fi is connected)
-   **********************************************************************/
-  if (wifiConnected) {
-    nodeName += hylighterNum;                // e.g. "ESP32 Art-Net 10"
-    artnetnode.setName(nodeName.c_str());
-    artnetnode.setNumPorts(1);
-    artnetnode.begin();
-    artnetnode.setArtDmxCallback(onArtNetFrame);
-  }
+    // Start DMX input and register callback
+    ESP32DMX.setDataReceivedCallback(&receiveCallback);
+    ESP32DMX.startInput(DMX_SERIAL_INPUT_PIN);
 
-  delay(500);
-  Serial.println("=== Setup Complete ===");
+    /***********************************************************************
+     * Wi-Fi + AutoConnect Setup
+     **********************************************************************/
+    wifiConnected = WifiServiceSetup();
+    
+    /***********************************************************************
+     * Art-Net Setup (only if Wi-Fi is connected)
+     **********************************************************************/
+    if (wifiConnected) {
+      nodeName += hylighterNum;                // e.g. "ESP32 Art-Net 10"
+      artnetnode.setName(nodeName.c_str());
+      artnetnode.setNumPorts(1);
+      artnetnode.begin();
+      artnetnode.setArtDmxCallback(onArtNetFrame);
+    }
+
+    delay(500);
+    Serial.println("=== Setup Complete ===");
   #endif
 }
 
@@ -169,8 +195,7 @@ void setup() {
  ************************************************************************/
 void loop() {
   #ifdef RUN_TESTS
-    tester.runAllTests();
-    delay(2000);
+    channel6Loop();
   #else
       // If connected, handle any incoming web requests or Art-Net data
   if (wifiConnected) {
@@ -222,11 +247,11 @@ void loop() {
       }
     }
 
-    // Estimate total current
+    // // Estimate total current
     curr = 0.0f;
     for (int k = 0; k < NUM_LEDS; k++) {
-      // 0.33 A per string at full scale, scale by (led_duty[k] / 65535)
-      curr += (float)led_duty[k] * (float)stringCount[k] * 0.33f / 65535.0f;
+      // 0.033 A per string at full scale, scale by (led_duty[k] / 65535)
+      curr += (float)led_duty[k] * (float)stringCount[k] * 0.033f / 65535.0f;
     }
 
     // If total current > ~1.5 A, scale everything down
@@ -242,8 +267,9 @@ void loop() {
 
     // Write final duty cycles to the LED PWM channels
     // Channels start at 1 for us, so add 1
+    // Changes: for safety purpose we reduce to 10% only
     for (int j = 0; j < NUM_LEDS; j++) {
-      ledcWrite(j + 1, led_duty[j]);
+      ledcWrite(j + 1, led_duty[j]*0.1f);
       display.print(led_duty[j]);
       display.print(" ");
     }

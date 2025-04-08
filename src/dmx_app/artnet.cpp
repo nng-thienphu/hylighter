@@ -3,6 +3,7 @@
 
 /***********************************************************************
  * Callback function invoked by the ArtNetnode library on DMX reception.
+ * Channel is not working: 3, 6, 7, 
  **********************************************************************/
 void onArtNetFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t* data) {
   // Ignore if not our configured universe

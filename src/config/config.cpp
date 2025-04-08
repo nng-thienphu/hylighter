@@ -35,7 +35,6 @@ unsigned long dmx_led_8bit_data[NUM_LEDS + 1]    = {0};
 unsigned long artnet_led_8bit_data[NUM_LEDS + 1] = {0};
 unsigned long led_8bit_data[NUM_LEDS + 1]        = {0};
 unsigned long led_duty[NUM_LEDS]                 = {0};
-// Example string counts for each LED channel
 unsigned long stringCount[NUM_LEDS]              = {3,4,4,4,4,3,3,3,3,3};
 
 // Dimming

@@ -91,6 +91,7 @@ void SystemTester::testDisplay() {
   Serial.println(displayPassed ? "PASS" : "FAIL");
 }
 
+
 void SystemTester::printSummary() {
   Serial.println("\n--- Test Summary ---");
   Serial.printf("WiFi    : %s\n", wifiPassed    ? "PASS" : "FAIL");
